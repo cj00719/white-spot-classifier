@@ -8,7 +8,7 @@ import os
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
-model = load_model('white_spot_cnn_model1.h5')
+model = load_model('white_spot_cnn_model1_float16.h5')
 CLASS_NAMES = ['Healthy', 'Infected']
 
 @app.route('/', methods=['GET', 'POST'])
