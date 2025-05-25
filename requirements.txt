@@ -1,6 +1,6 @@
-# requirements.txt
+# requirements.txt 
 tensorflow
+streamlit
 numpy
 Pillow
 matplotlib
-streamlit
