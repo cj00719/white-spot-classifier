@@ -1,6 +1,6 @@
 # requirements.txt 
-tensorflow
 streamlit
+tensorflow-cpu==2.13.0
 numpy
 Pillow
 matplotlib
