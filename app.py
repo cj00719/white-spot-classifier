@@ -1,32 +1,48 @@
-
-from flask import Flask, render_template, request, redirect, url_for
+import streamlit as st
 from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import img_to_array, load_img
+from tensorflow.keras.preprocessing.image import img_to_array
 import numpy as np
-import os
+from PIL import Image
+import matplotlib.pyplot as plt
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads/'
+st.set_page_config(page_title="White Spot Classifier", layout="centered")
 
-model = load_model('white_spot_cnn_model1_float16.h5')
+st.title("🦐 White Spot Disease Classifier")
+st.write("Upload or capture an image to classify shrimp as **Healthy** or **Infected**.")
+
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+capture_image = st.camera_input("Take a photo")
+
+# Load model
+model = load_model("white_spot_cnn_model1.h5")
 CLASS_NAMES = ['Healthy', 'Infected']
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        file = request.files['image']
-        if file:
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(filepath)
-            img = load_img(filepath, target_size=(128, 128))
-            img_array = img_to_array(img) / 255.0
-            img_array = np.expand_dims(img_array, axis=0)
-            preds = model.predict(img_array)[0]
-            class_idx = np.argmax(preds)
-            label = CLASS_NAMES[class_idx]
-            confidence = round(float(preds[class_idx]) * 100, 2)
-            return render_template('index.html', result=label, confidence=confidence, image_path=filepath)
-    return render_template('index.html', result=None)
+def predict(image):
+    image = image.resize((128, 128))
+    img_array = img_to_array(image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    preds = model.predict(img_array)[0]
+    return preds
 
-if __name__ == '__main__':
-    app.run(debug=True)
+image = None
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+elif capture_image is not None:
+    image = Image.open(capture_image)
+
+if image:
+    st.image(image, caption="Uploaded Image", use_column_width=True)
+    preds = predict(image)
+    class_idx = np.argmax(preds)
+    label = CLASS_NAMES[class_idx]
+    confidence = float(preds[class_idx]) * 100
+
+    st.markdown(f"### 🧪 Prediction: `{label}`")
+    st.markdown(f"**Confidence:** {confidence:.2f}%")
+
+    # Pie chart of confidence
+    fig, ax = plt.subplots()
+    ax.pie(preds, labels=CLASS_NAMES, autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')
+    st.pyplot(fig)
+
